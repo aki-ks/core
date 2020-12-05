@@ -7,6 +7,7 @@ struct director_settings {
 	const char *master_user_separator;
 
 	const char *director_servers;
+	const char *director_host_advertised;
 	const char *director_mail_servers;
 	const char *director_username_hash;
 	const char *director_flush_socket;

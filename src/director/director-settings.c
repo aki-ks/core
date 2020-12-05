@@ -69,6 +69,7 @@ static const struct setting_define director_setting_defines[] = {
 	DEF(SET_STR, master_user_separator),
 
 	DEF(SET_STR, director_servers),
+	DEF(SET_STR, director_host_advertised),
 	DEF(SET_STR, director_mail_servers),
 	DEF(SET_STR, director_username_hash),
 	DEF(SET_STR, director_flush_socket),
@@ -87,6 +88,7 @@ const struct director_settings director_default_settings = {
 	.master_user_separator = "",
 
 	.director_servers = "",
+	.director_host_advertised = "",
 	.director_mail_servers = "",
 	.director_username_hash = "%Lu",
 	.director_flush_socket = "",

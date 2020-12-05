@@ -286,7 +286,7 @@ static void main_preinit(void)
 				 director_state_changed,
 				 doveadm_connections_kick_callback);
 	director_host_add_from_string(director, set->director_servers);
-	director_find_self(director);
+	director_find_self(director, set->director_host_advertised);
 	if (mail_hosts_parse_and_add(director->mail_hosts,
 				     set->director_mail_servers) < 0)
 		i_fatal("Invalid value for director_mail_servers setting");
@@ -354,7 +354,7 @@ int main(int argc, char *argv[])
 		   make it clear which director we are. */
 		master_service_init_log_with_prefix(master_service,
 			t_strdup_printf("director(%s): ",
-					net_ip2addr(&director->self_ip)));
+					net_ip2addr(&director->advertised_ip)));
 	}
 	master_service_init_finish(master_service);
 
