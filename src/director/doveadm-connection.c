@@ -298,7 +298,7 @@ doveadm_cmd_director_add(struct doveadm_connection *conn,
 {
 	struct director_host *host;
 	struct ip_addr ip;
-	in_port_t port = conn->dir->self_port;
+	in_port_t port = conn->dir->bind_port;
 
 	if (args[0] == NULL ||
 	    net_addr2ip(args[0], &ip) < 0 ||

@@ -104,9 +104,13 @@ struct director {
 	struct event *event;
 	const struct director_settings *set;
 
-	/* IP and port of this director. self_host->ip/port must equal these. */
-	struct ip_addr self_ip;
-	in_port_t self_port;
+	/* IP and port where this director instance listens */
+	struct ip_addr bind_ip;
+	in_port_t bind_port;
+
+	/* IP and port announced to other directors. self_host->ip/port must equal these. */
+	struct ip_addr advertised_ip;
+	in_port_t advertised_port;
 
 	in_port_t test_port;
 
@@ -184,7 +188,7 @@ director_init(const struct director_settings *set,
 	      director_state_change_callback_t *callback,
 	      director_kick_callback_t *kick_callback);
 void director_deinit(struct director **dir);
-void director_find_self(struct director *dir);
+void director_find_self(struct director *dir, const char *advertised_host);
 
 /* Start connecting to other directors */
 void director_connect(struct director *dir, const char *reason);

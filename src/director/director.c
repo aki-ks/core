@@ -57,45 +57,40 @@ static void
 director_user_kill_finish_delayed(struct director *dir, struct user *user,
 				  bool skip_delay);
 
-static bool director_is_self_ip_set(struct director *dir)
+static void
+director_resolve_advertised_host(struct director *dir, const char *advertised_host)
 {
-	if (net_ip_compare(&dir->self_ip, &net_ip4_any))
-		return FALSE;
+    struct ip_addr *ips;
+    in_port_t port;
+    unsigned int ips_count;
 
-	if (net_ip_compare(&dir->self_ip, &net_ip6_any))
-		return FALSE;
+    if (net_str2hostport(advertised_host, dir->bind_port, &advertised_host, &port) < 0)
+        i_fatal("Invalid advertised director host:port in '%s'", advertised_host);
 
-	return TRUE;
+    if (net_gethostbyname(advertised_host, &ips, &ips_count) < 0)
+        i_fatal("Unknown advertised director host: %s", advertised_host);
+
+    if (ips_count != 1)
+        i_fatal("Advertised director host resolves to %u addresses rather than a single", ips_count);
+
+    dir->advertised_ip = ips[0];
+    dir->advertised_port = port;
 }
 
-static void director_find_self_ip(struct director *dir)
-{
-	struct director_host *const *hosts;
-	unsigned int i, count;
-
-	hosts = array_get(&dir->dir_hosts, &count);
-	for (i = 0; i < count; i++) {
-		if (net_try_bind(&hosts[i]->ip) == 0) {
-			dir->self_ip = hosts[i]->ip;
-			return;
-		}
-	}
-	i_fatal("director_servers doesn't list ourself");
-}
-
-void director_find_self(struct director *dir)
+void director_find_self(struct director *dir, const char *advertised_host)
 {
 	if (dir->self_host != NULL)
 		return;
 
-	if (!director_is_self_ip_set(dir))
-		director_find_self_ip(dir);
+	if (*advertised_host != '\0') {
+		director_resolve_advertised_host(dir, advertised_host);
+	}
 
-	dir->self_host = director_host_lookup(dir, &dir->self_ip,
-					      dir->self_port);
+	dir->self_host = director_host_lookup(dir, &dir->advertised_ip,
+			dir->advertised_port);
 	if (dir->self_host == NULL) {
 		i_fatal("director_servers doesn't list ourself (%s:%u)",
-			net_ip2addr(&dir->self_ip), dir->self_port);
+			net_ip2addr(&dir->advertised_ip), dir->advertised_port);
 	}
 	dir->self_host->self = TRUE;
 }
@@ -145,7 +140,7 @@ director_log_connect(struct director *dir, struct director_host *host,
 	}
 	e_info(dir->event, "Connecting to %s:%u (as %s%s): %s",
 	       host->ip_str, host->port,
-	       net_ip2addr(&dir->self_ip), str_c(str), reason);
+	       net_ip2addr(&dir->advertised_ip), str_c(str), reason);
 }
 
 int director_connect_host(struct director *dir, struct director_host *host,
@@ -159,7 +154,7 @@ int director_connect_host(struct director *dir, struct director_host *host,
 
 	director_log_connect(dir, host, reason);
 	port = dir->test_port != 0 ? dir->test_port : host->port;
-	fd = net_connect_ip(&host->ip, port, &dir->self_ip);
+	fd = net_connect_ip(&host->ip, port, &dir->bind_ip);
 	if (fd == -1) {
 		host->last_network_failure = ioloop_time;
 		e_error(dir->event, "connect(%s) failed: %m", host->name);
@@ -1452,8 +1447,10 @@ director_init(const struct director_settings *set,
 
 	dir = i_new(struct director, 1);
 	dir->set = set;
-	dir->self_port = listen_port;
-	dir->self_ip = *listen_ip;
+	dir->bind_port = listen_port;
+	dir->bind_ip = *listen_ip;
+	dir->advertised_port = listen_port;
+	dir->advertised_ip = *listen_ip;
 	dir->state_change_callback = callback;
 	dir->kick_callback = kick_callback;
 	dir->event = event_create(NULL);

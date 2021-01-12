@@ -2308,7 +2308,7 @@ static void director_connection_send_handshake(struct director_connection *conn)
 		"VERSION\t"DIRECTOR_VERSION_NAME"\t%u\t%u\n"
 		"ME\t%s\t%u\t%lld\n",
 		DIRECTOR_VERSION_MAJOR, DIRECTOR_VERSION_MINOR,
-		net_ip2addr(&conn->dir->self_ip), conn->dir->self_port,
+		net_ip2addr(&conn->dir->advertised_ip), conn->dir->advertised_port,
 		(long long)time(NULL)));
 }
 

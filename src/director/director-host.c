@@ -157,7 +157,7 @@ static void director_host_add_string(struct director *dir, const char *host)
 	in_port_t port;
 	unsigned int i, ips_count;
 
-	if (net_str2hostport(host, dir->self_port, &host, &port) < 0)
+	if (net_str2hostport(host, dir->bind_port, &host, &port) < 0)
 		i_fatal("Invalid director host:port in '%s'", host);
 
 	if (net_gethostbyname(host, &ips, &ips_count) < 0)
